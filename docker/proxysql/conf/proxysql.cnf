@@ -1,0 +1,141 @@
+cluster_sync_interfaces=false
+admin_variables=
+{
+    admin_credentials="radmin:radmin;cluster_user:cluster_pass"
+    mysql_ifaces="0.0.0.0:6032"
+    cluster_username="cluster_user"
+    cluster_password="cluster_pass"
+}
+
+mysql_variables=
+{
+    interfaces="0.0.0.0:6033"
+    monitor_ping_timeout=999
+}
+
+proxysql_servers =
+(
+    {
+        hostname="proxysql1"
+        port=6032
+        weight=0
+        comment="proxysql01"
+    },
+    {
+        hostname="proxysql2"
+        port=6032
+        weight=0
+        comment="proxysql02"
+    },
+    {
+        hostname="proxysql3"
+        port=6032
+        weight=0
+        comment="proxysql03"
+    },
+)
+
+mysql_galera_hostgroups = 
+(
+    {
+        writer_hostgroup=1001
+        reader_hostgroup=1002
+        backup_writer_hostgroup=1003
+        offline_hostgroup=1999
+        active=1
+        max_writers=1
+    }
+)
+
+mysql_servers = 
+(
+    {
+        address="node1",
+        port=3306,
+        hostgroup=1001,
+        weight=1001,
+        max_connections=10000,
+        comment="node01"
+    },
+    {
+        address="node2",
+        port=3306,
+        hostgroup=1001,
+        weight=1000,
+        max_connections=10000,
+        comment="node02"
+    },
+    {
+        address="node3",
+        port=3306,
+        hostgroup=1001,
+        weight=999,
+        max_connections=10000,
+        comment="node03"
+    },
+    {
+        address="node1",
+        port=3306,
+        hostgroup=1002,
+        weight=1001,
+        max_connections=10000,
+        comment="node01"
+    },
+    {
+        address="node2",
+        port=3306,
+        hostgroup=1002,
+        weight=1000,
+        max_connections=10000,
+        comment="node02"
+    },
+    {
+        address="node3",
+        port=3306,
+        hostgroup=1002,
+        weight=999,
+        max_connections=10000,
+        comment="node03"
+    },
+    {
+        address="node2",
+        port=3306,
+        hostgroup=1003,
+        weight=1000,
+        max_connections=10000,
+        comment="node02"
+    },
+    {
+        address="node3",
+        port=3306,
+        hostgroup=1003,
+        weight=999,
+        max_connections=10000,
+        comment="node03"
+    },
+)
+
+mysql_query_rules = 
+(
+        {
+            rule_id=1
+            active=1
+            match_pattern="^SELECT .* FOR UPDATE"
+            destination_hostgroup=1001
+            apply=1
+        },
+        {
+            rule_id=2
+            active=1
+            match_pattern="^SELECT"
+            destination_hostgroup=1002
+            apply=1
+        },
+        {
+            rule_id=3
+            active=1
+            match_pattern=".*"
+            destination_hostgroup=1001
+            apply=1
+        }
+)
