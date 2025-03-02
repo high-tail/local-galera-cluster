@@ -69,3 +69,18 @@ services:
       - node3
       - proxysql1
       - proxysql2
+
+  # HAProxy
+  haproxy:
+    container_name: haproxy
+    hostname: haproxy
+    build: ./docker/haproxy
+    volumes:
+      - ./docker/haproxy/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - proxysql1
+      - proxysql2
+      - proxysql3
+    ports:
+      - 6033:6033
+      - 8404:8404

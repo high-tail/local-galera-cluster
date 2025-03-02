@@ -13,6 +13,11 @@ mysql_variables=
     monitor_ping_timeout=999
 }
 
+mysql_users = 
+(
+    { username = "root", password = "root", default_hostgroup = 1001 }
+)
+
 proxysql_servers =
 (
     {
