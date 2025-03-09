@@ -3,37 +3,55 @@ services:
   node1:
     container_name: node1
     hostname: node1
-    build: ./docker/db
+    build:
+      context: ./docker/db
+      dockerfile: Dockerfile1
     volumes:
       - ./docker/db/conf/node1.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/db/conf/exporter.cnf:/etc/.my.cnf
       - ./docker/db/initdb.d:/docker-entrypoint-initdb.d
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: root
-    command: --wsrep-new-cluster
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--connect",
+          "--su-mysql",
+          "--innodb_initialized",
+          "--galera_online",
+        ]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 5
   node2:
     container_name: node2
     hostname: node2
     build: ./docker/db
     volumes:
       - ./docker/db/conf/node2.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/db/conf/exporter.cnf:/etc/.my.cnf
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: root
     depends_on:
-      - node1
+      node1: { condition: service_healthy }
   node3:
     container_name: node3
     hostname: node3
     build: ./docker/db
     volumes:
       - ./docker/db/conf/node3.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/db/conf/exporter.cnf:/etc/.my.cnf
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: root
     depends_on:
-      - node1
-      - node2
+      node1: { condition: service_healthy }
+      node2: { condition: service_started }
 
   # ProxySQL Cluster
   proxysql1:
@@ -43,9 +61,9 @@ services:
     volumes:
       - ./docker/proxysql/conf/proxysql.cnf:/etc/proxysql.cnf
     depends_on:
-      - node1
-      - node2
-      - node3
+      node1: { condition: service_healthy }
+      node2: { condition: service_started }
+      node3: { condition: service_started }
   proxysql2:
     container_name: proxysql2
     hostname: proxysql2
@@ -53,10 +71,10 @@ services:
     volumes:
       - ./docker/proxysql/conf/proxysql.cnf:/etc/proxysql.cnf
     depends_on:
-      - node1
-      - node2
-      - node3
-      - proxysql1
+      node1: { condition: service_healthy }
+      node2: { condition: service_started }
+      node3: { condition: service_started }
+      proxysql1: { condition: service_started }
   proxysql3:
     container_name: proxysql3
     hostname: proxysql3
@@ -64,11 +82,11 @@ services:
     volumes:
       - ./docker/proxysql/conf/proxysql.cnf:/etc/proxysql.cnf
     depends_on:
-      - node1
-      - node2
-      - node3
-      - proxysql1
-      - proxysql2
+      node1: { condition: service_healthy }
+      node2: { condition: service_started }
+      node3: { condition: service_started }
+      proxysql1: { condition: service_started }
+      proxysql2: { condition: service_started }
 
   # HAProxy
   haproxy:
@@ -78,9 +96,37 @@ services:
     volumes:
       - ./docker/haproxy/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     depends_on:
-      - proxysql1
-      - proxysql2
-      - proxysql3
+      proxysql1: { condition: service_started }
+      proxysql2: { condition: service_started }
+      proxysql3: { condition: service_started }
     ports:
       - 6033:6033
       - 8404:8404
+
+  # DevOps
+  ## Prometheus
+  prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    build: ./docker/prometheus
+    volumes:
+      - ./docker/prometheus/conf/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    depends_on:
+      - haproxy
+
+  ## Grafana
+  grafana:
+    container_name: grafana
+    hostname: grafana
+    build: ./docker/grafana
+    volumes:
+      - ./docker/grafana/conf/grafana.ini:/etc/grafana/grafana.ini
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
