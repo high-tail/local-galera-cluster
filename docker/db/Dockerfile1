@@ -13,11 +13,11 @@ RUN wget https://github.com/prometheus/mysqld_exporter/releases/download/v0.14.0
     && mv mysqld_exporter-0.14.0.linux-amd64/mysqld_exporter /usr/local/bin/ \
     && rm -rf mysqld_exporter-0.14.0.linux-amd64 mysqld_exporter-0.14.0.linux-amd64.tar.gz
 
-# Copy the start_services.sh script into the container
-COPY start_services.sh /usr/local/bin/start_services.sh
-RUN chmod +x /usr/local/bin/start_services.sh
+# Copy the start_services_bootstrap.sh script into the container
+COPY start_services_bootstrap.sh /usr/local/bin/start_services_bootstrap.sh
+RUN chmod +x /usr/local/bin/start_services_bootstrap.sh
 
 # Expose ports for Node Exporter and MySQL Exporter
 EXPOSE 9100 9104
 
-ENTRYPOINT ["/usr/local/bin/start_services.sh"]
+ENTRYPOINT ["/usr/local/bin/start_services_bootstrap.sh"]

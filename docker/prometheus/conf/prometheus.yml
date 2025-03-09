@@ -1,0 +1,26 @@
+global:
+  scrape_interval: "15s"
+  evaluation_interval: "15s"
+  
+scrape_configs:
+  - job_name: 'proxysql1'    
+    static_configs:
+      - targets: ['proxysql1:6070']
+  - job_name: 'proxysql2'
+    static_configs:
+      - targets: ['proxysql2:6070']
+  - job_name: 'proxysql3'
+    static_configs:
+      - targets: ['proxysql3:6070']
+  - job_name: 'haproxy'
+    static_configs:
+      - targets: ['haproxy:8404']
+  - job_name: 'node1'
+    static_configs:
+      - targets: ['node1:9100', 'node1:9104']
+  - job_name: 'node2'   
+    static_configs:
+      - targets: ['node2:9100', 'node2:9104']
+  - job_name: 'node3'
+    static_configs:
+      - targets: ['node3:9100', 'node3:9104']
